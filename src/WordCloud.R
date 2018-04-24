@@ -5,7 +5,7 @@ setwd("D:/Users/Paul/mow")
 db <- dbConnect(dbDriver("SQLite"), "./input/database.sqlite")
 
 reviews <- dbGetQuery(db, "
-                      SELECT *
+                      SELECT Score,Text
                       FROM Reviews
                       LIMIT 1000")
 
