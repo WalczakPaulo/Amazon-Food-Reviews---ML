@@ -22,17 +22,8 @@ getData <- function() {
   }
   
   reviews$Score = map(reviews$Score, divideSet)
-  
-  split_val <- floor(0.8 * nrow(reviews))
-  
-  ## set the seed to make your partition reproductible
-  train_ind <- sample(seq_len(nrow(reviews)), size = split_val)
-  
-  train <- reviews[train_ind, ]
-  test <- reviews[-train_ind, ]
-  
   dbDisconnect(db)
-  return(list("train"=train,"test"=test))
-  
+  #return(list("train"=train,"test"=test))
+  return(reviews)
 }
 

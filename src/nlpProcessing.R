@@ -8,6 +8,7 @@ nlpProcessing <- function(documents) {
   eStopWords <- stopwords("english")
   eStopWords <- eStopWords[eStopWords != "not"]
   corpus = tm_map(corpus, removeWords, eStopWords)
+  corpus = tm_map(corpus, stemDocument, language="english")
   return(corpus)
 }
 
