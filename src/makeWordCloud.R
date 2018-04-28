@@ -10,7 +10,7 @@ make_word_cloud <- function(documents, howToColor) {
   corpus = tm_map(corpus, removeWords, eStopWords)
   
   frequencies = DocumentTermMatrix(corpus)
-  removeSparse <- removeSparse(frequencies, 0.995)
+  removeSparse <- removeSparseTerms(frequencies, 0.995)
   word_frequencies = as.data.frame(as.matrix(removeSparse))
   
   words <- colnames(word_frequencies)
