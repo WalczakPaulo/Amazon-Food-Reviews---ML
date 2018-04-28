@@ -10,7 +10,7 @@ getData <- function() {
   reviews <- dbGetQuery(db, "
                         SELECT Score,Text
                         FROM Reviews WHERE Score != 3
-                        LIMIT 10")
+                        LIMIT 100")
   
   divideSet <- function(data) {
     result <- ""
@@ -22,8 +22,10 @@ getData <- function() {
   }
   
   reviews$Score = map(reviews$Score, divideSet)
-  dbDisconnect(db)
+  #dbDisconnect(db)
   #return(list("train"=train,"test"=test))
+  unlist(reviews, use.names=FALSE)
+  
   return(reviews)
 }
 
