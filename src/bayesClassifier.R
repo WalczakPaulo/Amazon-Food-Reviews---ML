@@ -3,6 +3,7 @@ library(caret)
 library(tm)
 library(purrr)
 library(e1071)
+library(rpart)
 
 setwd("D:/Users/Paul/mowy")
 
@@ -31,7 +32,7 @@ sc <- unlist(sc)
 textTestSet <- unlist(test$Text)
 scTest <- unlist(test$Score)
 scTest = map(scTest, divideSet)
-scTest <- inlist(scTest)
+scTest <- unlist(scTest)
 
 reviewsTest = cbind(textTestSet, scTest)
 
@@ -56,9 +57,9 @@ train$y <- as.factor(train$y)
 # Train.
 #fit <- train(y ~ ., data = train, method = 'bayesglm', verboseiter = TRUE)
 model <- naiveBayes(y ~ ., data=train)
-mean(fqt$Score == predict(model, fqt))
+#mean(fqt$Score == predict(model, fqt))
 # Check accuracy on training.
-predict(fit, newdata = train)
+#mean(train$y == predict(model, newdata = train))
 
 # Test data.
 # Test data.
@@ -68,4 +69,28 @@ tdm <- DocumentTermMatrix(corpus, control = list(dictionary = Terms(tdm), remove
 test <- as.matrix(tdm)
 
 # Check accuracy on test.
-predict(fit, newdata = test)
+#mean(scTest == predict(model, newdata = test))
+
+#modelRegression <- glm(y ~ ., data=train, family="binomial")
+#mean(fqt$Score == predict(modelRegression, fqt,type="response"))
+
+#mean(scTest == predict(modelRegression, newdata = as.data.frame(test)))
+
+
+fit <- rpart(y ~ ., method="class", data=train)
+val = predict(fit, newdata = train,
+        na.action = na.pass, ...)
+
+divide <- function(item) {
+  result = ""
+  if(item < 0) 
+    result = "positive"
+  else 
+    result = "negative"
+  return(result)
+}
+
+sc = val[,1] - val[,2]
+sc = map(sc, divide)
+
+mean(sc, train$y)

@@ -29,3 +29,12 @@ getData <- function() {
   return(reviews)
 }
 
+divide <- function(item) {
+  result = ""
+  if(item < 0) 
+    result = "positive"
+  else 
+    result = "negative"
+  return(result)
+}
+
