@@ -1,6 +1,5 @@
 library(RSQLite)
 library(purrr)
-setwd("D:/Users/Paul/mow")
 source("./src/makeWordCloud.R")
 
 
@@ -10,7 +9,7 @@ getData <- function() {
   reviews <- dbGetQuery(db, "
                         SELECT Score,Text
                         FROM Reviews WHERE Score != 3
-                        LIMIT 100")
+                        LIMIT 500")
   
   divideSet <- function(data) {
     result <- ""

@@ -1,71 +1,98 @@
 rm(list=ls())
 library(e1071)
 library(rpart)
-setwd("D:/Users/Paul/mowy")
+
+set.seed(123)
 source("./src/nlpProcessing.R")
 source("./src/loadData.R")
 
 reviews = getData()
 
-reviews <- reviews[1:500, ]
+reviews <- reviews[1:1000, ]
 
 split_val <- floor(0.8 * nrow(reviews))
 train_ind <- sample(seq_len(nrow(reviews)), size = split_val)
 train <- reviews[train_ind, ]
 test <- reviews[-train_ind, ]
 
-text <- unlist(train$Text)
-sc <- unlist(train$Score)
-sc <- unlist(sc)
+reviews.text <- unlist(reviews$Text)
+reviews.sc <- unlist(reviews$Score)
+reviews.sc <- unlist(reviews.sc)
 
-textTestSet <- unlist(test$Text)
-scTest <- unlist(test$Score)
-scTest <- unlist(scTest)
+# train.text <- unlist(train$Text)
+# train.sc <- unlist(train$Score)
+# train.sc <- unlist(train.sc)
 
-reviewsTest = cbind(textTestSet, scTest)
+test.text <- unlist(test$Text)
+test.sc <- unlist(test$Score)
+test.sc <- unlist(test.sc)
 
-reviews = cbind(text,sc)
+reviews.reviews = cbind(reviews.text, reviews.sc)
+# train.reviews = cbind(train.text, train.sc)
+# test.reviews = cbind(test.text, test.sc)
 
-
-data <- text
-corpus <- VCorpus(VectorSource(data))
+reviews.corpus <- VCorpus(VectorSource(reviews.text))
+# train.corpus <- VCorpus(VectorSource(train.text))
+# test.corpus <- VCorpus(VectorSource(test.text))
 
 # Create a document term matrix.
-tdm <- DocumentTermMatrix(corpus, list(removePunctuation = TRUE, stopwords = TRUE, stemming = TRUE, removeNumbers = TRUE))
+reviews.tdm <- DocumentTermMatrix(reviews.corpus, list(removePunctuation = TRUE,
+                                                     stopwords = TRUE,
+                                                     stemming = TRUE,
+                                                     removeNumbers = TRUE,
+                                                     tolower = TRUE))
+# train.tdm <- DocumentTermMatrix(train.corpus, list(dictionary = Terms(reviews.tdm),
+#                                                    removePunctuation = TRUE,
+#                                                    stopwords = TRUE,
+#                                                    stemming = TRUE,
+#                                                    removeNumbers = TRUE,
+#                                                    tolower = TRUE))
+# test.tdm <- DocumentTermMatrix(test.corpus, list(dictionary = Terms(train.tdm),
+#                                                  removePunctuation = TRUE,
+#                                                  stopwords = TRUE,
+#                                                  stemming = TRUE,
+#                                                  removeNumbers = TRUE,
+#                                                  tolower = TRUE))
 
 # Convert to a data.frame for training and assign a classification (factor) to each document.
-train <- as.matrix(tdm)
-train <- cbind(train, sc)
-colnames(train)[ncol(train)] <- 'y'
-train <- as.data.frame(train)
-train$y <- as.factor(train$y)
+reviews.matrix <- as.matrix(reviews.tdm)
+reviews.matrix <- cbind(reviews.matrix, reviews.sc)
+colnames(reviews.matrix)[ncol(reviews.matrix)] <- 'y'
+reviews.df <- as.data.frame(reviews.matrix)
+reviews.df$y <- as.factor(reviews.df$y)
+
+train.df <- reviews.df[train_ind,]
+test.df <- reviews.df[setdiff(1:200, train_ind),]
+# train.matrix <- as.matrix(train.tdm)
+# train.matrix <- cbind(train.matrix, train.sc)
+# colnames(train.matrix)[ncol(train.matrix)] <- 'y'
+# train.df <- as.data.frame(train.matrix)
+# train.df$y <- as.factor(train.df$y)
+# 
+# test.matrix <- as.matrix(test.tdm)
+# test.df <- as.data.frame(test.matrix)
+# test.df.trimmed <- test.df[colSums(test.df != 0) > 0]
 
 # Train.
 #fit <- train(y ~ ., data = train, method = 'bayesglm', verboseiter = TRUE)
-model <- naiveBayes(y ~ ., data=train)
-fit <- rpart(y ~ ., method="class", data=train, na.action = "pass")
+formula <- y ~ .
+model.bayes <- naiveBayes(formula, data=train.df)
+model.rforest <- rpart(formula, method="class", data=reviews.df, subset = train_ind, na.action = na.pass)
+model.regression <- lm(formula, data = reviews.df, subset = train_ind, family = binomial(link="logit"), na.action = na.pass)
 
 print('Display accuracies of prediction on train set')
 print('Naive bayes:')
-mean(train$y == predict(model, newdata = train))
+mean(train.df$y == predict(model.bayes, newdata = train.df))
 print('Regression decision tree:')
-val = predict(fit, newdata = train,
+val = predict(model.rforest, newdata = train.df,
               na.action = na.pass)
 sc = val[,1] - val[,2]
 sc = map(sc, divide)
-mean(sc ==  train$y)
-# Test data.
-# Test data.
-data2 <- textTestSet
-corpus <- VCorpus(VectorSource(data2))
-tdm <- DocumentTermMatrix(corpus, control = list(dictionary = Terms(tdm), removePunctuation = TRUE, stopwords = TRUE, stemming = TRUE, removeNumbers = TRUE))
-test <- as.matrix(tdm)
+mean(sc == train.df$y)
 
+#Test set
 print('Check accuracy on test.')
 print('Naive bayes: ')
-mean(scTest == predict(model, newdata = test))
-val = predict(fit, newdata = test,
-              na.action = na.pass)
-sc = val[,1] - val[,2]
-sc = map(sc, divide)
-mean(sc ==  scTest)
+mean(test.sc == predict(model.bayes, newdata = test.df))
+val = predict(model.rforest, newdata = test.df, na.action = na.pass, type = "class")
+mean(test.sc == val)

@@ -1,7 +1,7 @@
 library(RSQLite)
 source("./src/makeWordCloud.R")
 
-setwd("D:/Users/Paul/mow")
+
 db <- dbConnect(dbDriver("SQLite"), "./input/database.sqlite")
 
 reviews <- dbGetQuery(db, "

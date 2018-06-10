@@ -5,7 +5,6 @@ library(purrr)
 library(e1071)
 library(rpart)
 
-setwd("D:/Users/Paul/mowy")
 
 divideSet <- function(data) {
   result <- ""
@@ -17,7 +16,7 @@ divideSet <- function(data) {
 }
 
 reviews <- read_csv("./input/Reviews.csv")
-reviews <- reviews[1:125, ]
+reviews <- reviews[1:1000, ]
 
 split_val <- floor(0.8 * nrow(reviews))
 train_ind <- sample(seq_len(nrow(reviews)), size = split_val)
@@ -79,7 +78,7 @@ test <- as.matrix(tdm)
 
 fit <- rpart(y ~ ., method="class", data=train)
 val = predict(fit, newdata = train,
-        na.action = na.pass, ...)
+        na.action = na.pass)
 
 divide <- function(item) {
   result = ""
@@ -93,4 +92,4 @@ divide <- function(item) {
 sc = val[,1] - val[,2]
 sc = map(sc, divide)
 
-mean(sc, train$y)
+mean(sc == train$y)

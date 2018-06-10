@@ -9,8 +9,6 @@ library(tidyr)    # Hadleyverse
 
 theme_set(theme_economist())
 
-setwd("D:/Users/Paul/mowy")
-
 
 food_reviews <- read_csv("./input/Reviews.csv") %>% select(UserId, ProductId, Score) 
 

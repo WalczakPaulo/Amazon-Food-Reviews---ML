@@ -6,7 +6,7 @@ library(SnowballC)
 library(purrr)
 library(tm)
 library(readr)
-setwd("D:/Users/Paul/mowy")
+
 source("./src/nlpProcessing.R")
 source("./src/loadData.R")
 
@@ -45,7 +45,7 @@ mat.df <- cbind(mat.df, ss)
 colnames(mat.df)[ncol(mat.df)] <- "category"
 
 # Split data by rownumber into two equal portions
-train <- sample(nrow(mat.df), ceiling(nrow(mat.df) * .50))
+train <- sample(nrow(mat.df), ceiling(nrow(mat.df) * .80))
 test <- (1:nrow(mat.df))[- train]
 
 # Isolate classifier
@@ -55,7 +55,7 @@ cl <- mat.df[, "category"]
 modeldata <- mat.df[,!colnames(mat.df) %in% "category"]
 
 # Create model: training set, test set, training set classifier
-knn.pred <- knn(modeldata[train, ], modeldata[test, ], cl[train])
+knn.pred <- knn(modeldata[train, ], modeldata[test, ], cl[train], k=5)
 
 # Confusion matrix
 conf.mat <- table("Predictions" = knn.pred, Actual = cl[test])
@@ -66,4 +66,4 @@ conf.mat
 
 # Create data frame with test data and predicted category
 df.pred <- cbind(knn.pred, modeldata[test, ])
-write.table(df.pred, file="output.csv", sep=";")
+#write.table(df.pred, file="output.csv", sep=";")
