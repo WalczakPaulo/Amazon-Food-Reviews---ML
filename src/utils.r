@@ -1,17 +1,11 @@
 remove_missing_levels <- function(fit, test_data) {
-  
-  # drop empty factor levels in test data
   test_data %>%
     droplevels() %>%
     as.data.frame() -> test_data
   
-  # 'fit' object structure of 'lm' and 'glmmPQL' is different so we need to
-  # account for it
   if (any(class(fit) == "glmmPQL")) {
-    # Obtain factor predictors in the model and their levels
     factors <- (gsub("[-^0-9]|as.factor|\\(|\\)", "",
                      names(unlist(fit$contrasts))))
-    # do nothing if no factors are present
     if (length(factors) == 0) {
       return(test_data)
     }
@@ -23,10 +17,8 @@ remove_missing_levels <- function(fit, test_data) {
     
     model_factors <- as.data.frame(cbind(factors, factor_levels))
   } else {
-    # Obtain factor predictors in the model and their levels
     factors <- (gsub("[-^0-9]|as.factor|\\(|\\)", "",
                      names(unlist(fit$xlevels))))
-    # do nothing if no factors are present
     if (length(factors) == 0) {
       return(test_data)
     }
@@ -35,26 +27,16 @@ remove_missing_levels <- function(fit, test_data) {
     model_factors <- as.data.frame(cbind(factors, factor_levels))
   }
   
-  # Select column names in test data that are factor predictors in
-  # trained model
-  
   predictors <- names(test_data[names(test_data) %in% factors])
-  
-  # For each factor predictor in your data, if the level is not in the model,
-  # set the value to NA
   
   for (i in 1:length(predictors)) {
     found <- test_data[, predictors[i]] %in% model_factors[
       model_factors$factors == predictors[i], ]$factor_levels
     if (any(!found)) {
-      # track which variable
       var <- predictors[i]
-      # set to NA
       test_data[!found, predictors[i]] <- NA
-      # drop empty factor levels in test data
       test_data %>%
         droplevels() -> test_data
-      # issue warning to console
     }
   }
   return(test_data)
