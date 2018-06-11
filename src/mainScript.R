@@ -1,16 +1,20 @@
 rm(list=ls())
 library(e1071)
 library(rpart)
+library(varhandle)
 
 set.seed(123)
 source("./src/nlpProcessing.R")
 source("./src/loadData.R")
+source("./src/utils.r")
 
 reviews = getData()
 
-reviews <- reviews[1:1000, ]
+reviews.no <- 400
+train.no <- 0.8 * reviews.no
+reviews <- reviews[1:reviews.no, ]
 
-split_val <- floor(0.8 * nrow(reviews))
+split_val <- floor(train.no)
 train_ind <- sample(seq_len(nrow(reviews)), size = split_val)
 train <- reviews[train_ind, ]
 test <- reviews[-train_ind, ]
@@ -60,9 +64,14 @@ reviews.matrix <- cbind(reviews.matrix, reviews.sc)
 colnames(reviews.matrix)[ncol(reviews.matrix)] <- 'y'
 reviews.df <- as.data.frame(reviews.matrix)
 reviews.df$y <- as.factor(reviews.df$y)
+reviews.df.2 <- reviews.df[train_ind,][colSums(reviews.df[train_ind,] != 0) > 0]
 
 train.df <- reviews.df[train_ind,]
-test.df <- reviews.df[setdiff(1:200, train_ind),]
+train.df.2 <- train.df[colSums(train.df != 0) > 0]
+
+test.df <- reviews.df[setdiff(1:reviews.no, train_ind),]
+test.df <- subset(test.df, select = -c(y))
+test.df.2 <- test.df[colSums(test.df != 0) > 0]
 # train.matrix <- as.matrix(train.tdm)
 # train.matrix <- cbind(train.matrix, train.sc)
 # colnames(train.matrix)[ncol(train.matrix)] <- 'y'
@@ -75,24 +84,50 @@ test.df <- reviews.df[setdiff(1:200, train_ind),]
 
 # Train.
 #fit <- train(y ~ ., data = train, method = 'bayesglm', verboseiter = TRUE)
+
+
 formula <- y ~ .
 model.bayes <- naiveBayes(formula, data=train.df)
 model.rforest <- rpart(formula, method="class", data=reviews.df, subset = train_ind, na.action = na.pass)
-model.regression <- lm(formula, data = reviews.df, subset = train_ind, family = binomial(link="logit"), na.action = na.pass)
+model.regression <- glm(formula, data = train.df.2, family = binomial(link="logit"), na.action = na.pass)
 
 print('Display accuracies of prediction on train set')
 print('Naive bayes:')
 mean(train.df$y == predict(model.bayes, newdata = train.df))
+
 print('Regression decision tree:')
-val = predict(model.rforest, newdata = train.df,
+pred.rforest = predict(model.rforest, newdata = train.df,
               na.action = na.pass)
-sc = val[,1] - val[,2]
+sc = pred.rforest[,1] - pred.rforest[,2]
 sc = map(sc, divide)
 mean(sc == train.df$y)
+
+print('Logistic regression:')
+n <- names(train.df.2)
+test.df.2 <- test.df[,n[n != 'y']]
+pred.regression <- plogis(predict(model.regression, newdata = remove_missing_levels(model.regression, test.df.2)))
+test.data <- as.data.frame(rbind(pred.regression, test.sc))
+test.data <- test.data[sapply(test.data, function(x) !(any(is.na(x))))]
+
+test.data.x <- as.data.frame(map(map(test.data[1,], as.numeric), convert))
+test.data.y <- unfactor(test.data[2,])
+mean(test.data.x == test.data.y)
 
 #Test set
 print('Check accuracy on test.')
 print('Naive bayes: ')
-mean(test.sc == predict(model.bayes, newdata = test.df))
+mean(test.sc == predict(model.bayes, newdata = test.df, type = "class"))
+
+print("Random forest")
 val = predict(model.rforest, newdata = test.df, na.action = na.pass, type = "class")
 mean(test.sc == val)
+
+print('Logistic regression:')
+n <- names(train.df.2)
+test.df.2 <- test.df[,n[n != 'y']]
+pred.regression <- plogis(predict(model.regression, newdata = remove_missing_levels(model.regression, test.df.2)))
+test.data <- as.data.frame(rbind(pred.regression, test.sc))
+test.data <- test.data[sapply(test.data, function(x) !(any(is.na(x))))]
+test.data.x <- as.data.frame(map(map(test.data[1,], as.numeric), convert))
+test.data.y <- unfactor(test.data[2,])
+mean(test.data.x == test.data.y)
