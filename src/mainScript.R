@@ -61,5 +61,5 @@ test.sc <- map(test.df.y, as.character)$y
 # Train.
 formula <- y ~ .
 runBayes(formula, train.df, test.df, test.sc)
-runRpart(formula, reviews.df, train.df, train_ind, test.df, test.sc)
+runRpart(formula, train.df, test.df, test.sc)
 runRegression(formula, train.df.2, test.df, test.sc)

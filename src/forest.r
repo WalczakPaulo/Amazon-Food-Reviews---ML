@@ -1,5 +1,5 @@
-runRpart <- function(formula, all.data, train.data, train_ind, test.data, test.labels) {
-  model.rforest <<- rpart(formula, method="class", data=all.data, subset = train_ind, na.action = na.pass)
+runRpart <- function(formula, train.data, test.data, test.labels) {
+  model.rforest <<- rpart(formula, method="class", data=train.data, na.action = na.pass)
   
   print('Rtrain data: ')
   pred.rforest.train <<- predict(model.rforest, newdata = train.data, na.action = na.pass, type = "class")
